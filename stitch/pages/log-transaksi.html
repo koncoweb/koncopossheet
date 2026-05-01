@@ -1,0 +1,30 @@
+<div class="topbar">
+  <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('pos')" style="font-size:18px;"></i>
+  <span class="topbar-title" style="flex:1;text-align:center;">Log Transaksi</span>
+  <i class="fa-solid fa-th" id="log-view-toggle" class="topbar-icon" onclick="toggleLogView()" style="font-size:18px;"></i>
+</div>
+
+<!-- Filter Bar -->
+<div class="log-filter-bar">
+  <div class="log-tabs">
+    <button class="log-tab-btn active" onclick="filterLogStatus(this, 'semua')">Semua</button>
+    <button class="log-tab-btn" onclick="filterLogStatus(this, 'piutang')">Piutang</button>
+    <button class="log-tab-btn" onclick="filterLogStatus(this, 'draft')">Draft</button>
+  </div>
+</div>
+
+<!-- Search & Date Filter -->
+<div class="log-search-bar">
+  <div class="log-search-wrap">
+    <i class="fa-solid fa-search"></i>
+    <input type="text" id="log-search-input" class="log-search-input" placeholder="Cari pelanggan, invoice..." oninput="renderLogTransaksi()" />
+  </div>
+  <div class="log-date-filter">
+    <input type="date" id="log-date-dari" class="log-date-input" onchange="renderLogTransaksi()" />
+    <span style="color:var(--text-light);font-size:12px;">-</span>
+    <input type="date" id="log-date-sampai" class="log-date-input" onchange="renderLogTransaksi()" />
+  </div>
+</div>
+
+<!-- Content Area -->
+<div class="screen-content" id="log-transaksi-body"></div>

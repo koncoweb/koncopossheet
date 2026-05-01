@@ -1,0 +1,24 @@
+<div class="topbar">
+  <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('laporan')" style="font-size:18px;"></i>
+  <span class="topbar-title" style="flex:1;text-align:center;">Piutang Pelanggan</span>
+  <i class="fa-solid fa-download topbar-icon"></i>
+</div>
+
+<div class="laporan-filter-bar">
+  <div class="form-group" style="flex:1;">
+    <label>Cari Pelanggan</label>
+    <input type="text" id="piutang-search" class="form-input" placeholder="Nama pelanggan..." oninput="renderLaporanPiutang()" />
+  </div>
+  <div class="laporan-export-btns">
+    <button class="btn-export" onclick="exportPiutangPDF()">
+      <i class="fa-solid fa-file-pdf"></i> PDF
+    </button>
+    <button class="btn-export" onclick="exportPiutangExcel()">
+      <i class="fa-solid fa-file-excel"></i> Excel
+    </button>
+  </div>
+</div>
+
+<div class="screen-content">
+  <div id="laporan-piutang-body"></div>
+</div>

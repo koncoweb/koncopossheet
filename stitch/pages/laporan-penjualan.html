@@ -1,0 +1,38 @@
+<div class="topbar">
+  <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('laporan')" style="font-size:18px;"></i>
+  <span class="topbar-title" style="flex:1;text-align:center;">Laporan Penjualan</span>
+  <i class="fa-solid fa-download topbar-icon" onclick="exportLaporanPenjualan()"></i>
+</div>
+
+<!-- Filter -->
+<div class="laporan-filter-bar">
+  <div class="laporan-date-range">
+    <div class="form-group">
+      <label>Dari</label>
+      <input type="date" id="lp-dari" class="form-input" onchange="renderLaporanPenjualan()" />
+    </div>
+    <div class="form-group">
+      <label>Sampai</label>
+      <input type="date" id="lp-sampai" class="form-input" onchange="renderLaporanPenjualan()" />
+    </div>
+  </div>
+  <div class="form-group" style="flex:1;">
+    <label>Cari Pelanggan</label>
+    <input type="text" id="lp-search" class="form-input" placeholder="Nama pelanggan..." oninput="renderLaporanPenjualan()" />
+  </div>
+  <div class="laporan-export-btns">
+    <button class="btn-export" onclick="exportPenjualanPDF()">
+      <i class="fa-solid fa-file-pdf"></i> PDF
+    </button>
+    <button class="btn-export" onclick="exportPenjualanExcel()">
+      <i class="fa-solid fa-file-excel"></i> Excel
+    </button>
+  </div>
+</div>
+
+<div class="screen-content" id="laporan-penjualan-body">
+  <div class="pos-empty-state">
+    <i class="fa-solid fa-chart-line" style="font-size:48px;color:#ddd;margin-bottom:8px;"></i>
+    <p class="pos-empty-title">Memuat data...</p>
+  </div>
+</div>

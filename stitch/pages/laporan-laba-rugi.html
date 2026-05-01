@@ -1,0 +1,28 @@
+<div class="topbar">
+  <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('laporan')" style="font-size:18px;"></i>
+  <span class="topbar-title" style="flex:1;text-align:center;">Laba Rugi</span>
+  <i class="fa-solid fa-download topbar-icon"></i>
+</div>
+
+<div class="laporan-filter-bar">
+  <div class="laporan-date-range">
+    <div class="form-group">
+      <label>Dari</label>
+      <input type="date" id="llr-dari" class="form-input" onchange="renderLaporanLabaRugi()" />
+    </div>
+    <div class="form-group">
+      <label>Sampai</label>
+      <input type="date" id="llr-sampai" class="form-input" onchange="renderLaporanLabaRugi()" />
+    </div>
+  </div>
+  <div class="laporan-export-btns">
+    <button class="btn-export" onclick="exportLabaRugiPDF()">
+      <i class="fa-solid fa-file-pdf"></i> PDF
+    </button>
+    <button class="btn-export" onclick="exportLabaRugiExcel()">
+      <i class="fa-solid fa-file-excel"></i> Excel
+    </button>
+  </div>
+</div>
+
+<div class="screen-content" id="laporan-labarugi-body"></div>

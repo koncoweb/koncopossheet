@@ -1,0 +1,13 @@
+<div class="topbar">
+  <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('pengaturan')" style="font-size:18px;"></i>
+  <span class="topbar-title" style="flex:1;text-align:center;">Kasir</span>
+  <span id="kasir-count" style="font-size:12px;color:rgba(255,255,255,0.8);"></span>
+</div>
+<div class="crud-search-bar">
+  <i class="fa-solid fa-magnifying-glass" style="color:var(--text-light);font-size:14px;flex-shrink:0;"></i>
+  <input type="text" id="kasir-search" class="crud-search-input" placeholder="Cari kasir..." oninput="filterKontak('kasir')" />
+</div>
+<div class="screen-content" id="kasir-list"></div>
+<button class="crud-fab" onclick="switchScreen('tambah-kasir')">
+  <i class="fa-solid fa-plus"></i>
+</button>
