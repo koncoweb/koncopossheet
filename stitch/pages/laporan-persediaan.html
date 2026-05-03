@@ -1,0 +1,22 @@
+<div class="topbar">
+  <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('laporan')" style="font-size:18px;"></i>
+  <span class="topbar-title" style="flex:1;text-align:center;">Persediaan Stok</span>
+  <i class="fa-solid fa-download topbar-icon"></i>
+</div>
+
+<div class="laporan-filter-bar">
+  <div class="form-group" style="flex:1;">
+    <label>Cari Produk</label>
+    <input type="text" id="lpers-search" class="form-input" placeholder="Nama produk..." oninput="renderLaporanPersediaan()" />
+  </div>
+  <div class="laporan-export-btns">
+    <button class="btn-export" onclick="exportPersediaanPDF()">
+      <i class="fa-solid fa-file-pdf"></i> PDF
+    </button>
+    <button class="btn-export" onclick="exportPersediaanExcel()">
+      <i class="fa-solid fa-file-excel"></i> Excel
+    </button>
+  </div>
+</div>
+
+<div class="screen-content" id="laporan-persediaan-body"></div>
