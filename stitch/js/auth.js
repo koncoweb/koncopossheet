@@ -10,6 +10,13 @@ let _sessionToken = null;
 // INIT — Cek session saat app dibuka
 // ============================================================
 async function initAuth() {
+  if (!hasGasConfig()) {
+    const saved = DB.getObj('session');
+    if (saved.token) _clearSession();
+    switchScreen('gas-setup');
+    return;
+  }
+
   const saved = DB.getObj('session');
   if (saved.token && saved.user) {
     _sessionToken = saved.token;
@@ -59,6 +66,12 @@ async function doLogin() {
   const password = document.getElementById('login-password')?.value;
   const errEl    = document.getElementById('login-error');
   const btn      = document.getElementById('btn-login');
+
+  if (!hasGasConfig()) {
+    _showAuthError(errEl, 'Simpan URL Google Apps Script Anda di halaman Hubungkan Google Sheet.');
+    switchScreen('gas-setup');
+    return;
+  }
 
   if (!email || !password) {
     _showAuthError(errEl, 'Email dan password wajib diisi');
@@ -127,6 +140,12 @@ async function doRegister() {
   btn.disabled = true;
   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mendaftar...';
   _hideAuthError(errEl);
+
+  if (!hasGasConfig()) {
+    _showAuthError(errEl, 'Simpan URL Google Apps Script Anda di halaman Hubungkan Google Sheet.');
+    switchScreen('gas-setup');
+    return;
+  }
 
   try {
     const result = await gasRequest({

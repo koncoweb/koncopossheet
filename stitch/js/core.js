@@ -44,7 +44,7 @@ const NAV_PARENT = {
   'pengaturan': 'pengaturan',
   'tambah-kasir': 'pengaturan',
   // Auth screens — no nav parent
-  'login': null, 'register': null,
+  'login': null, 'register': null, 'gas-setup': null,
 };
 
 // Semua halaman selalu reload HTML terbaru (no cache)
@@ -92,7 +92,7 @@ async function switchScreen(name, params = {}) {
   const bottomNav = document.querySelector('.bottom-nav');
   if (bottomNav) {
     const isRoot = BOTTOM_NAV_SCREENS.includes(name);
-    const isAuth = name === 'login' || name === 'register';
+    const isAuth = name === 'login' || name === 'register' || name === 'gas-setup';
     bottomNav.style.display = isAuth ? 'none' : '';
     bottomNav.style.opacity = isRoot ? '1' : '0.85';
   }

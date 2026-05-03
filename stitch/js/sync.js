@@ -1,8 +1,8 @@
 // ============================================================
 // SYNC v2 — Sinkronisasi LocalStorage ↔ Google Sheets
 // ============================================================
-
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXxYKfCa4DsB6T4SRZnTun4JXF7uMEewpEkeINh6dxVnZPK9mJbP8yU4NHNHRW6Mh8/exec';
+// URL Web App GAS tidak dibundle: setiap pengguna menyimpan URL deployment
+// milik spreadsheet/Google Apps Script mereka sendiri (localStorage gasConfig).
 
 // ===== STATE =====
 let _syncStatus  = 'idle';
@@ -11,12 +11,36 @@ let _isSyncing   = false;
 let _pendingSync = {};
 let _autoSyncTimer = null;
 
+function _isValidGasUrl(u) {
+  return typeof u === 'string' && u.trim().startsWith('https://script.google.com');
+}
+
+/** URL yang sudah disimpan pengguna (wajib ada sebelum login/register). */
+function getUserSavedGasUrl() {
+  const u = DB.getObj('gasConfig').url;
+  return _isValidGasUrl(u) ? u.trim() : '';
+}
+
+/** URL di kolom input halaman sync / gas-setup (jika sedang dibuka). */
+function draftGasUrlFromForm() {
+  const el = document.getElementById('sync-gas-url') || document.getElementById('gas-setup-url');
+  const t = (el && el.value) ? el.value.trim() : '';
+  return _isValidGasUrl(t) ? t : '';
+}
+
+/** Untuk request: pakai draft form jika valid, lalu URL tersimpan. */
+function getEffectiveGasUrl() {
+  const draft = draftGasUrlFromForm();
+  if (draft) return draft;
+  return getUserSavedGasUrl();
+}
+
 function getConfiguredGasUrl() {
-  return DB.getObj('gasConfig').url || GAS_URL || '';
+  return getEffectiveGasUrl();
 }
 
 function hasGasConfig() {
-  return !!getConfiguredGasUrl();
+  return !!getUserSavedGasUrl();
 }
 
 function normalizeMasterData(list) {
@@ -39,30 +63,34 @@ function normalizePulledCollection(localKey, value) {
 // CORE REQUEST — inject token otomatis
 // ============================================================
 async function gasRequest(params) {
-  const url = getConfiguredGasUrl();
-  if (!url) throw new Error('GAS_URL belum diisi');
+  if (!params) params = {};
+  const gasUrlOverride = params.gasUrlOverride;
+  const body = params.body !== undefined ? params.body : {};
+  const query = params.query !== undefined ? params.query : {};
+  const url = gasUrlOverride || getEffectiveGasUrl();
+  if (!url) throw new Error('URL Google Apps Script belum diisi. Simpan URL Web App deployment Anda.');
 
   const token = (typeof getToken === 'function') ? getToken() : null;
-  if (!params.body)  params.body  = {};
-  if (!params.query) params.query = {};
+  const bodyObj = { ...body };
+  const queryObj = { ...query };
 
   if (token) {
-    if (Object.keys(params.body).length  > 0 && !params.body.token)  params.body.token  = token;
-    if (Object.keys(params.query).length > 0 && !params.query.token) params.query.token = token;
+    if (Object.keys(bodyObj).length > 0 && !bodyObj.token) bodyObj.token = token;
+    if (Object.keys(queryObj).length > 0 && !queryObj.token) queryObj.token = token;
   }
 
-  const isPost = Object.keys(params.body).length > 0;
+  const isPost = Object.keys(bodyObj).length > 0;
 
   if (isPost) {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(params.body),
+      body: JSON.stringify(bodyObj),
       redirect: 'follow',
     });
     return JSON.parse(await res.text());
   } else {
-    const qs = new URLSearchParams(params.query).toString();
+    const qs = new URLSearchParams(queryObj).toString();
     const res = await fetch(url + (qs ? '?' + qs : ''), { redirect: 'follow' });
     return JSON.parse(await res.text());
   }
@@ -72,8 +100,10 @@ async function gasRequest(params) {
 // PING
 // ============================================================
 async function pingGAS() {
+  const urlToTest = draftGasUrlFromForm() || getUserSavedGasUrl();
+  if (!urlToTest) return { ok: false, error: 'Isi URL Web App terlebih dahulu' };
   try {
-    const r = await gasRequest({ query: { action: 'ping' } });
+    const r = await gasRequest({ query: { action: 'ping' }, gasUrlOverride: urlToTest });
     return { ok: r.status === 'ok', time: r.time };
   } catch (e) { return { ok: false, error: e.message }; }
 }
@@ -344,15 +374,20 @@ function initSyncSettings() {
   const urlEl     = document.getElementById('sync-gas-url');
   const statusEl  = document.getElementById('sync-status-text');
   const lastSyncEl= document.getElementById('sync-last-time');
-  const currentUrl = getConfiguredGasUrl();
-  if (urlEl) urlEl.value = currentUrl || '';
+  const savedUrl = getUserSavedGasUrl();
+  if (urlEl) urlEl.value = savedUrl || '';
   const ls = DB.getObj('lastSync');
   if (lastSyncEl && ls.time) lastSyncEl.textContent = new Date(ls.time).toLocaleString('id-ID');
   if (statusEl) {
-    statusEl.textContent = currentUrl ? 'Terkonfigurasi ✓' : 'Belum dikonfigurasi';
-    statusEl.style.color = currentUrl ? '#2ecc71' : '#f39c12';
+    statusEl.textContent = savedUrl ? 'Terkonfigurasi ✓ (spreadsheet Anda)' : 'Belum dikonfigurasi';
+    statusEl.style.color = savedUrl ? '#2ecc71' : '#f39c12';
   }
   updateSyncIndicatorBig();
+}
+
+function initGasSetup() {
+  const urlEl = document.getElementById('gas-setup-url');
+  if (urlEl) urlEl.value = getUserSavedGasUrl() || '';
 }
 
 async function testKoneksiGAS() {
@@ -363,13 +398,23 @@ async function testKoneksiGAS() {
 }
 
 function simpanGASUrl() {
-  const url = document.getElementById('sync-gas-url')?.value.trim();
+  const el = document.getElementById('sync-gas-url') || document.getElementById('gas-setup-url');
+  const url = el?.value.trim();
   if (!url || !url.startsWith('https://script.google.com')) {
     showSyncToast('URL tidak valid', 2000, true); return;
   }
   DB.setObj('gasConfig', { url });
   showSyncToast('✓ URL disimpan!');
   initSyncSettings();
+  initGasSetup();
+}
+
+function lanjutKeLoginSetelahGas() {
+  if (!hasGasConfig()) {
+    showSyncToast('Simpan URL Web App Anda terlebih dahulu (tombol Simpan URL).', 3500, true);
+    return;
+  }
+  switchScreen('login');
 }
 
 // ============================================================
@@ -383,4 +428,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('screenInit', (e) => {
   if (e.detail.name === 'sync-settings') initSyncSettings();
+  if (e.detail.name === 'gas-setup') initGasSetup();
 });

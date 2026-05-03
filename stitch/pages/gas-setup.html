@@ -1,0 +1,52 @@
+<div class="auth-screen">
+
+  <div class="auth-logo-wrap" style="padding-top:16px;">
+    <div class="auth-logo">
+      <i class="fa-solid fa-link"></i>
+    </div>
+    <div class="auth-app-name">Google Sheet Anda</div>
+    <div class="auth-app-sub">Setiap usaha memakai spreadsheet &amp; Apps Script sendiri</div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-card-title" style="font-size:15px;">URL Web App (deployment)</div>
+    <p style="font-size:12px;color:var(--text-light);margin:0 0 12px;line-height:1.45;">
+      Buat spreadsheet di Google Drive → <strong>Extensions → Apps Script</strong> → tempel kode dari folder <code style="font-size:11px;">stitch/gas/</code> → Deploy sebagai Web App → salin URL ke sini.
+    </p>
+
+    <div class="tp-form" style="margin-bottom:12px;">
+      <div class="tp-field-group">
+        <label class="tp-label">Web App URL</label>
+        <input type="url" id="gas-setup-url" class="tp-input"
+          placeholder="https://script.google.com/macros/s/.../exec"
+          autocomplete="off"
+          style="font-size:11px;" />
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <button type="button" class="tp-outline-btn" style="flex:1;margin:0;" onclick="testKoneksiGAS()">
+        <i class="fa-solid fa-plug"></i> Test
+      </button>
+      <button type="button" class="btn-simpan" style="flex:1;" onclick="simpanGASUrl()">
+        Simpan URL
+      </button>
+    </div>
+
+    <button type="button" class="tp-outline-btn" style="width:100%;margin:0 0 8px;" onclick="setupGoogleSheet()">
+      <i class="fa-solid fa-table"></i> Setup sheet di spreadsheet (jalankan sekali)
+    </button>
+
+    <button type="button" class="btn-simpan" style="width:100%;" onclick="lanjutKeLoginSetelahGas()">
+      Lanjut ke Masuk / Daftar
+    </button>
+  </div>
+
+  <div class="auth-switch" style="font-size:12px;line-height:1.5;">
+    <span class="auth-switch-link" onclick="switchScreen('login')">Sudah simpan URL? Masuk</span>
+    ·
+    <span class="auth-switch-link" onclick="switchScreen('register')">Daftar</span>
+  </div>
+
+  <div style="height:16px;"></div>
+</div>
