@@ -325,7 +325,7 @@ function buildInvoiceBytes(trx) {
 }
 
 // ===== CETAK STRUK =====
-let _lastTrx = null;
+// _lastTrx dideklarasikan di pos.js (transaksi terakhir untuk struk)
 
 async function cetakStruk() {
   if (!_lastTrx) { showToast('Tidak ada data transaksi'); return; }
