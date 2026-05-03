@@ -61,6 +61,16 @@ function _onLoginSuccess() {
 }
 
 // ============================================================
+// CSRF — wajib untuk login & register (server: Security.gs)
+// ============================================================
+async function fetchCsrfToken() {
+  const r = await gasRequest({ query: { action: 'getCsrfToken' } });
+  if (!r || r.error) throw new Error((r && r.error) ? r.error : 'Gagal mengambil token keamanan');
+  if (!r.csrf_token) throw new Error('Gagal mengambil token keamanan');
+  return r.csrf_token;
+}
+
+// ============================================================
 // LOGIN
 // ============================================================
 async function doLogin() {
@@ -85,8 +95,9 @@ async function doLogin() {
   _hideAuthError(errEl);
 
   try {
+    const csrf_token = await fetchCsrfToken();
     const result = await gasRequest({
-      body: { action: 'login', email, password }
+      body: { action: 'login', email, password, csrf_token }
     });
 
     if (result.error) {
@@ -139,19 +150,20 @@ async function doRegister() {
   if (password.length < 6) { _showAuthError(errEl, 'Password minimal 6 karakter'); return; }
   if (password !== konfirmasi) { _showAuthError(errEl, 'Konfirmasi password tidak cocok'); return; }
 
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mendaftar...';
-  _hideAuthError(errEl);
-
   if (!hasGasConfig()) {
     _showAuthError(errEl, 'Simpan URL Google Apps Script Anda di halaman Hubungkan Google Sheet.');
     switchScreen('gas-setup');
     return;
   }
 
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mendaftar...';
+  _hideAuthError(errEl);
+
   try {
+    const csrf_token = await fetchCsrfToken();
     const result = await gasRequest({
-      body: { action: 'register', namaLengkap: nama, namaUsaha, jenisUsaha, telp, email, password }
+      body: { action: 'register', namaLengkap: nama, namaUsaha, jenisUsaha, telp, email, password, csrf_token }
     });
 
     if (result.error) {

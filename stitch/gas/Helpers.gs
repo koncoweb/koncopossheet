@@ -1,5 +1,5 @@
 function getSheet(key) {
-  var name = SHEETS[key] || key, sh = SS.getSheetByName(name);
+  var name = SHEETS[key] || key, sh = getKoncoSpreadsheet_().getSheetByName(name);
   if (!sh) throw new Error('Sheet "' + name + '" tidak ditemukan. Jalankan setupDatabase()');
   return sh;
 }
@@ -43,13 +43,13 @@ function trim(s) { return String(s || '').trim(); }
 
 function addLog(uid, aksi, sheet, jml, status, pesan) {
   try {
-    var sh = SS.getSheetByName(SHEETS.syncLog); if (!sh) return;
+    var sh = getKoncoSpreadsheet_().getSheetByName(SHEETS.syncLog); if (!sh) return;
     sh.appendRow([_nowISO(), uid || '', aksi, sheet, jml, status, pesan]);
     while (sh.getLastRow() > 1001) sh.deleteRow(2);
   } catch (e) {}
 }
 
-function doPing() { return { status: 'ok', time: _nowISO(), sheet: SS.getName(), version: '3.0' }; }
+function doPing() { return { status: 'ok', time: _nowISO(), sheet: getKoncoSpreadsheet_().getName(), version: '3.0' }; }
 
 function respond(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);

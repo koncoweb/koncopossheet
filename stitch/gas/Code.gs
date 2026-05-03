@@ -1,6 +1,30 @@
 // KONCOWRB v3 — Google Apps Script
 // Cara: Extensions > Apps Script > paste semua ini > Save > Run setupDatabase
-var SS = SpreadsheetApp.getActiveSpreadsheet();
+function parseSpreadsheetId_(raw) {
+  if (!raw) return '';
+  var s = String(raw).trim();
+  var m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (m) return m[1];
+  return s;
+}
+
+function getKoncoSpreadsheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss) return ss;
+  var raw = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  var id = parseSpreadsheetId_(raw);
+  if (id) {
+    try {
+      return SpreadsheetApp.openById(id);
+    } catch (e) {
+      throw new Error('SPREADSHEET_ID tidak valid atau akun tidak punya akses ke sheet: ' + e.message);
+    }
+  }
+  throw new Error(
+    'Spreadsheet tidak terhubung. (1) Buka Google Sheet → Extensions → Apps Script → tempel kode. ' +
+    '(2) Atau Project Settings → Script properties → SPREADSHEET_ID = ID atau URL spreadsheet. Deploy ulang Web App.'
+  );
+}
 
 
 var SHEETS = {
@@ -113,12 +137,13 @@ function doPost(e) {
 // ===== SETUP DATABASE =====
 function setupDatabase() {
   var created=[], existing=[];
+  var ss = getKoncoSpreadsheet_();
   var sheetNames = Object.keys(SCHEMAS);
   for (var i=0; i<sheetNames.length; i++) {
     var name = sheetNames[i];
-    var sh = SS.getSheetByName(name);
+    var sh = ss.getSheetByName(name);
     if (!sh) {
-      sh = SS.insertSheet(name);
+      sh = ss.insertSheet(name);
       var headers = SCHEMAS[name];
       sh.getRange(1,1,1,headers.length).setValues([headers]);
       var isAuth    = (name==='Users'||name==='Sessions');
@@ -745,7 +770,7 @@ function genLapJatuhTempo(uid) {
 
 // ===== HELPERS =====
 function getSheet(key) {
-  var name=SHEETS[key]||key, sh=SS.getSheetByName(name);
+  var name=SHEETS[key]||key, sh=getKoncoSpreadsheet_().getSheetByName(name);
   if (!sh) throw new Error('Sheet "'+name+'" tidak ditemukan. Jalankan setupDatabase()');
   return sh;
 }
@@ -781,12 +806,12 @@ function genToken() { return Utilities.base64Encode(genId()+'_'+Date.now()).repl
 function trim(s) { return String(s||'').trim(); }
 function addLog(uid,aksi,sheet,jml,status,pesan) {
   try {
-    var sh=SS.getSheetByName(SHEETS.syncLog); if(!sh) return;
+    var sh=getKoncoSpreadsheet_().getSheetByName(SHEETS.syncLog); if(!sh) return;
     sh.appendRow([new Date().toISOString(),uid||'',aksi,sheet,jml,status,pesan]);
     if(sh.getLastRow()>1001) sh.deleteRow(2);
   } catch(e){}
 }
-function doPing() { return {status:'ok',time:new Date().toISOString(),sheet:SS.getName(),version:'3.0'}; }
+function doPing() { return {status:'ok',time:new Date().toISOString(),sheet:getKoncoSpreadsheet_().getName(),version:'3.0'}; }
 function respond(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
 }

@@ -11,7 +11,10 @@
   <div class="auth-card">
     <div class="auth-card-title" style="font-size:15px;">URL Web App (deployment)</div>
     <p style="font-size:12px;color:var(--text-light);margin:0 0 12px;line-height:1.45;">
-      Buat spreadsheet di Google Drive → <strong>Extensions → Apps Script</strong> → tempel kode dari folder <code style="font-size:11px;">stitch/gas/</code> → Deploy sebagai Web App → salin URL ke sini.
+      <strong>Cara A (disarankan):</strong> buka <strong>Google Sheet</strong> Anda → <strong>Extensions → Apps Script</strong> → tempel semua file <code style="font-size:11px;">.gs</code> dari folder <code style="font-size:11px;">stitch/gas/</code> (bukan <code>Code.gs</code> + modular sekaligus). Deploy Web App → salin URL ke sini.
+    </p>
+    <p style="font-size:11px;color:#c0392b;margin:0 0 12px;line-height:1.45;padding:10px;background:rgba(192,57,43,0.08);border-radius:8px;">
+      <strong>Error “Spreadsheet tidak terhubung”?</strong> Artinya script tidak tahu sheet mana. Kalau project Apps Script dibuat di <strong>script.google.com</strong>: buka Apps Script → ikon <strong>gerigi</strong> (Project Settings) → <strong>Script properties</strong> → tambah <strong>SPREADSHEET_ID</strong> = ID dari URL sheet (bagian <code>…/d/<strong>ID_INI</strong>/edit…</code>) atau paste URL penuh. <strong>Simpan</strong> lalu <strong>Deploy → kelola deployment → Edit → Versi baru</strong>.
     </p>
 
     <div class="tp-form" style="margin-bottom:12px;">

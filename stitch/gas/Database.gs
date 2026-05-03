@@ -1,11 +1,12 @@
 function setupDatabase() {
   var created = [], existing = [];
+  var ss = getKoncoSpreadsheet_();
   var sheetNames = Object.keys(SCHEMAS);
   for (var i = 0; i < sheetNames.length; i++) {
     var name = sheetNames[i];
-    var sh = SS.getSheetByName(name);
+    var sh = ss.getSheetByName(name);
     if (!sh) {
-      sh = SS.insertSheet(name);
+      sh = ss.insertSheet(name);
       var headers = SCHEMAS[name];
       sh.getRange(1, 1, 1, headers.length).setValues([headers]);
       var isAuth = (name === 'Users' || name === 'Sessions');

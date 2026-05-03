@@ -1,5 +1,35 @@
-var SS = SpreadsheetApp.getActiveSpreadsheet();
 var CACHE = CacheService.getScriptCache();
+
+/** Ambil ID spreadsheet dari nilai mentah (ID saja atau URL lengkap Google Sheet). */
+function parseSpreadsheetId_(raw) {
+  if (!raw) return '';
+  var s = String(raw).trim();
+  var m = s.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (m) return m[1];
+  return s;
+}
+
+/**
+ * Spreadsheet target: dari file yang dibuka (Extensions → Apps Script dari sheet),
+ * atau Script property SPREADSHEET_ID jika project Apps Script standalone + Web App.
+ */
+function getKoncoSpreadsheet_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (ss) return ss;
+  var raw = PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  var id = parseSpreadsheetId_(raw);
+  if (id) {
+    try {
+      return SpreadsheetApp.openById(id);
+    } catch (e) {
+      throw new Error('SPREADSHEET_ID tidak valid atau akun tidak punya akses ke sheet: ' + e.message);
+    }
+  }
+  throw new Error(
+    'Spreadsheet tidak terhubung. Wajib salah satu: (1) Buka file Google Sheet Anda → menu Extensions → Apps Script → tempel semua file .gs di sini (script menempel pada sheet itu). ' +
+    '(2) Atau jika project dibuat di script.google.com: ikon gerigi Project Settings → Script properties → tambah property nama persis SPREADSHEET_ID, nilai = ID dari URL (hanya teks di antara /d/ dan /edit), atau paste URL sheet lengkap. Simpan → Deploy ulang Web App.'
+  );
+}
 
 var SHEETS = {
   users:'Users', sessions:'Sessions',
