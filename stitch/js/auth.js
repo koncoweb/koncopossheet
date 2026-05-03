@@ -10,6 +10,8 @@ let _sessionToken = null;
 // INIT — Cek session saat app dibuka
 // ============================================================
 async function initAuth() {
+  if (migrateLegacySharedGasUrl()) _clearSession();
+
   if (!hasGasConfig()) {
     const saved = DB.getObj('session');
     if (saved.token) _clearSession();

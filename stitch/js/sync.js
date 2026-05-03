@@ -43,6 +43,40 @@ function hasGasConfig() {
   return !!getUserSavedGasUrl();
 }
 
+/** URL deployment GAS bersama (bawaan lama); dihapus otomatis agar pakai sheet sendiri. */
+var LEGACY_SHARED_GAS_URL =
+  'https://script.google.com/macros/s/AKfycbwXxYKfCa4DsB6T4SRZnTun4JXF7uMEewpEkeINh6dxVnZPK9mJbP8yU4NHNHRW6Mh8/exec';
+
+function _normalizeGasUrlForCompare(u) {
+  return String(u || '').trim().replace(/\/+$/, '');
+}
+
+/** Mengembalikan true jika localStorage dibersihkan (perlu clear session di caller). */
+function migrateLegacySharedGasUrl() {
+  var u = _normalizeGasUrlForCompare(DB.getObj('gasConfig').url);
+  if (!u || _normalizeGasUrlForCompare(LEGACY_SHARED_GAS_URL) !== u) return false;
+  localStorage.removeItem('gasConfig');
+  localStorage.removeItem('lastSync');
+  return true;
+}
+
+/**
+ * Hapus URL tersimpan + session + data lokal (printer tetap).
+ * Pakai saat ingin ganti ke spreadsheet / deployment lain.
+ */
+function resetGasConnection() {
+  if (!confirm('Hapus URL spreadsheet yang tersimpan?\n\nSession dan data lokal akan di-reset (pengaturan printer tetap). Anda akan memasukkan URL Web App baru.')) return;
+  localStorage.removeItem('gasConfig');
+  localStorage.removeItem('lastSync');
+  _syncStatus = 'idle';
+  _lastSync = null;
+  if (typeof _clearSession === 'function') _clearSession();
+  updateSyncIndicator();
+  if (typeof updateSyncIndicatorBig === 'function') updateSyncIndicatorBig();
+  showSyncToast('URL dihapus. Isi URL spreadsheet baru.');
+  switchScreen('gas-setup');
+}
+
 function normalizeMasterData(list) {
   return Array.isArray(list) ? list.map(item => typeof item === 'string' ? { id: '', nama: item } : item) : [];
 }
