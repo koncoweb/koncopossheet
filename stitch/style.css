@@ -3284,6 +3284,12 @@ body {
   flex: 2;
 }
 
+.struk-action-img {
+  flex: 1.4;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .struk-action-icon {
   flex: 1;
   font-size: 18px;

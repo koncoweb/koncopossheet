@@ -1,5 +1,5 @@
 // ===================================================
-// POS â€” Product list, Cart, Checkout, Struk
+// POS — Product list, Cart, Checkout, Struk
 // ===================================================
 
 let posActiveCat = 'semua';
@@ -337,7 +337,7 @@ function renderCartScreen() {
         <div class="cart-item-nama">${c.nama}</div>
         <div class="cart-item-harga">${c.qty} ${c.unit} x ${fmt(getCartItemBasePrice(c))}</div>
         ${cartSettings.showModalLaba ? `<div class="cart-item-modal">Modal: <span style="color:var(--primary);">${fmt(c.hargaBeli||0)}</span>, Laba: <span style="color:var(--primary);">${fmt(totalLaba)}</span></div>` : ''}
-        ${cartSettings.showDiskon && hasDiscount ? `<div class="cart-item-edit-note">Diskon ${c.diskonPct > 0 ? `${Number(c.diskonPct.toFixed(2))}%` : ''}${c.diskonPct > 0 ? ' � ' : ''}${fmt(c.diskonRp || 0)}</div>` : ''}
+        ${cartSettings.showDiskon && hasDiscount ? `<div class="cart-item-edit-note">Diskon ${c.diskonPct > 0 ? `${Number(c.diskonPct.toFixed(2))}%` : ''}${c.diskonPct > 0 ? ' � ' : ''}${fmt(c.diskonRp || 0)}</div>` : ''}
         ${c.keterangan ? `<div class="cart-item-edit-note">${c.keterangan}</div>` : ''}
         <div class="cart-item-actions-row">
           ${cartSettings.showCopy ? `
@@ -489,7 +489,7 @@ function focusKeterangan() {
   document.getElementById('cart-keterangan')?.focus();
 }
 
-// ===== FORM TRANSAKSI â€” STATE =====
+// ===== FORM TRANSAKSI — STATE =====
 const cartForm = {
   tglTransaksi: '',
   tglJthTempo: '',
@@ -610,7 +610,7 @@ function renderPelangganModal() {
   const container = document.getElementById('pelanggan-modal-list');
   if (!container) return;
   if (list.length === 0) {
-    container.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:16px;font-size:13px;">Belum ada pelanggan. Tambah di Pengaturan â†’ Pelanggan.</p>`;
+    container.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:16px;font-size:13px;">Belum ada pelanggan. Tambah di Pengaturan → Pelanggan.</p>`;
     return;
   }
   container.innerHTML = list.map(p => `
@@ -675,7 +675,7 @@ function bukaPickerSales() {
   const container = document.getElementById('sales-modal-list');
   if (!container) return;
   if (list.length === 0) {
-    container.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:16px;font-size:13px;">Belum ada sales. Tambah di Pengaturan â†’ Sales.</p>`;
+    container.innerHTML = `<p style="text-align:center;color:var(--text-light);padding:16px;font-size:13px;">Belum ada sales. Tambah di Pengaturan → Sales.</p>`;
     return;
   }
   container.innerHTML = list.map(s => `
@@ -1031,43 +1031,121 @@ function toggleStrukSound() {
 }
 
 // ===== SHARE =====
-function shareStruk() {
-  if (!_lastTrx) return;
+function buildStrukSharePlainText() {
+  if (!_lastTrx) return '';
   const trx = _lastTrx;
   const outlet = DB.getObj('outlet');
   const tgl = new Date(trx.tanggal).toLocaleString('id-ID');
-  const items = trx.items.map(c => `â€¢ ${c.nama} x${c.qty} = ${fmt(getCartItemSubtotal(c))}`).join('\n');
-  const text = `*${outlet.nama || 'KONCOPOS'}*\n`
-    + `Tanggal: ${tgl}\n`
-    + `---\n${items}\n---\n`
-    + `*Total: ${fmt(trx.total)}*\n`
-    + `Metode: ${trx.metodePembayaran}\n`
-    + (trx.metodePembayaran === 'Tunai' ? `Kembalian: ${fmt(trx.kembalian)}\n` : '')
-    + `\n${outlet.catatan || 'Terima kasih!'}`;
+  const items = trx.items
+    .map(c => '\u2022 ' + c.nama + ' x' + c.qty + ' = ' + fmt(getCartItemSubtotal(c)))
+    .join('\n');
+  let text =
+    '*' +
+    (outlet.nama || 'KONCOPOS') +
+    '*\n' +
+    'Tanggal: ' +
+    tgl +
+    '\n---\n' +
+    items +
+    '\n---\n' +
+    '*Total: ' +
+    fmt(trx.total) +
+    '*\n' +
+    'Metode: ' +
+    trx.metodePembayaran +
+    '\n';
+  if (trx.metodePembayaran === 'Tunai') {
+    text += 'Kembalian: ' + fmt(trx.kembalian || 0) + '\n';
+  }
+  text += '\n' + (outlet.catatan || 'Terima kasih!');
+  return text;
+}
 
+function shareStruk() {
+  const text = buildStrukSharePlainText();
+  if (!text) {
+    showToast('Tidak ada data transaksi');
+    return;
+  }
   if (navigator.share) {
-    navigator.share({ title: 'Struk ' + (outlet.nama || 'KONCOPOS'), text }).catch(() => {});
+    navigator
+      .share({ title: 'Struk', text })
+      .catch(() => {});
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('Teks struk disalin')).catch(() => showToast('Salin manual dari layar'));
   } else {
-    navigator.clipboard?.writeText(text).then(() => showToast('Teks struk disalin!')).catch(() => showToast('Share tidak didukung'));
+    showToast('Bagikan tidak didukung di perangkat ini');
   }
 }
 
 function shareWhatsapp() {
-  if (!_lastTrx) return;
-  const trx = _lastTrx;
-  const outlet = DB.getObj('outlet');
-  const tgl = new Date(trx.tanggal).toLocaleString('id-ID');
-  const items = trx.items.map(c => `â€¢ ${c.nama} x${c.qty} = ${fmt(getCartItemSubtotal(c))}`).join('%0A');
-  const text = encodeURIComponent(
-    `*${outlet.nama || 'KONCOPOS'}*\n`
-    + `Tanggal: ${tgl}\n`
-    + `---\n`
-  ) + items + encodeURIComponent(
-    `\n---\n*Total: ${fmt(trx.total)}*\n`
-    + `Metode: ${trx.metodePembayaran}\n`
-    + `\n${outlet.catatan || 'Terima kasih!'}`
-  );
-  window.open('https://wa.me/?text=' + text, '_blank');
+  const text = buildStrukSharePlainText();
+  if (!text) {
+    showToast('Tidak ada data transaksi');
+    return;
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+/** PNG dari area nota (#struk-paper): Web Share API (file) atau unduh. Membutuhkan html2canvas (CDN di index.html). */
+async function shareStrukSebagaiGambar() {
+  if (!_lastTrx) {
+    showToast('Tidak ada data transaksi');
+    return;
+  }
+  if (typeof html2canvas !== 'function') {
+    showToast('Pustaka gambar belum dimuat. Muat ulang halaman.');
+    return;
+  }
+  const el = document.getElementById('struk-paper');
+  if (!el || el.offsetHeight < 8) {
+    showToast('Tampilan nota belum siap');
+    return;
+  }
+  const btn = document.getElementById('btn-struk-gambar');
+  if (btn) {
+    btn.disabled = true;
+  }
+  try {
+    const canvas = await html2canvas(el, {
+      scale: Math.min(2.5, (window.devicePixelRatio || 1) * 1.25),
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      windowWidth: el.scrollWidth,
+      windowHeight: el.scrollHeight,
+    });
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Gagal membuat gambar'))), 'image/png', 0.92);
+    });
+    const baseName = 'struk-' + String(_lastTrx.id || Date.now()).replace(/[^\w-]/g, '_');
+    const file = new File([blob], baseName + '.png', { type: 'image/png' });
+    const sharePayload = { files: [file], title: 'Struk' };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(sharePayload)) {
+      await navigator.share(sharePayload);
+      showToast('Gambar dibagikan');
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = baseName + '.png';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showToast('Gambar diunduh. Buka file lalu bagikan dari galeri / aplikasi lain.');
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    console.error(e);
+    showToast(e.message ? 'Gagal: ' + e.message : 'Gagal membuat gambar');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function tutupModalEditCartItem() {
@@ -1269,7 +1347,7 @@ function renderLogItemList(t) {
       <i class="fa-solid fa-receipt" style="color:${statusColor};font-size:16px;"></i>
     </div>
     <div class="log-item-info" onclick="lihatDetailLog('${t.id}')">
-      <div class="log-item-nama">${t.pelanggan || 'Umum'} Â· ${t.items.length} item</div>
+      <div class="log-item-nama">${t.pelanggan || 'Umum'} · ${t.items.length} item</div>
       <div class="log-item-sub">
         <span>${tglStr} ${waktuStr}</span>
         <span style="color:${statusColor};font-weight:600;">${statusLabel}</span>
@@ -1306,7 +1384,7 @@ function renderLogItemGrid(t) {
     <div class="log-grid-pelanggan">${t.pelanggan || 'Umum'}</div>
     <div class="log-grid-items">${t.items.length} item</div>
     <div class="log-grid-total">${fmt(t.total)}</div>
-    <div class="log-grid-date">${tglStr} Â· ${waktuStr}</div>
+    <div class="log-grid-date">${tglStr} · ${waktuStr}</div>
   </div>`;
 }
 

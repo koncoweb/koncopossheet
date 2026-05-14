@@ -38,16 +38,16 @@
 <div class="struk-bottom-bar">
   <!-- Row 1: Print, Share, WA, WA -->
   <div class="struk-action-row">
-    <button class="struk-action-btn struk-action-print" onclick="cetakStruk()">
+    <button type="button" class="struk-action-btn struk-action-print" onclick="cetakStruk()">
       <i class="fa-solid fa-print"></i> Print
     </button>
-    <button class="struk-action-btn struk-action-icon" onclick="shareStruk()" title="Bagikan">
+    <button type="button" id="btn-struk-gambar" class="struk-action-btn struk-action-img" onclick="shareStrukSebagaiGambar()" title="Bagikan sebagai gambar PNG">
+      <i class="fa-solid fa-image"></i> Gambar
+    </button>
+    <button type="button" class="struk-action-btn struk-action-icon" onclick="shareStruk()" title="Bagikan teks">
       <i class="fa-solid fa-share-nodes"></i>
     </button>
-    <button class="struk-action-btn struk-action-icon" onclick="shareWhatsapp()" title="WhatsApp">
-      <i class="fa-brands fa-whatsapp"></i>
-    </button>
-    <button class="struk-action-btn struk-action-icon" onclick="shareWhatsapp()" title="WhatsApp">
+    <button type="button" class="struk-action-btn struk-action-icon" onclick="shareWhatsapp()" title="WhatsApp">
       <i class="fa-brands fa-whatsapp"></i>
     </button>
   </div>
