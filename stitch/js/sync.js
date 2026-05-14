@@ -96,6 +96,19 @@ function normalizePulledCollection(localKey, value) {
 // ============================================================
 // CORE REQUEST — inject token otomatis
 // ============================================================
+
+/** Di http(s) host (Vercel, dll.): GAS tidak mengirim CORS → pakai proxy same-origin. */
+function _useGasServerProxy() {
+  try {
+    const p = window.location.protocol;
+    return p === 'http:' || p === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
+
+const GAS_PROXY_PATH = '/api/gas-proxy';
+
 async function gasRequest(params) {
   if (!params) params = {};
   const gasUrlOverride = params.gasUrlOverride;
@@ -114,6 +127,33 @@ async function gasRequest(params) {
   }
 
   const isPost = Object.keys(bodyObj).length > 0;
+  const useProxy = _useGasServerProxy();
+
+  if (useProxy) {
+    const res = await fetch(GAS_PROXY_PATH, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        target: url,
+        gasMethod: isPost ? 'POST' : 'GET',
+        gasBody: isPost ? JSON.stringify(bodyObj) : undefined,
+        gasQuery: !isPost ? queryObj : undefined,
+      }),
+    });
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseErr) {
+      throw new Error(
+        res.status === 404
+          ? 'Endpoint /api/gas-proxy tidak ditemukan. Deploy dengan Vercel (folder stitch memuat api/) atau jalankan vercel dev.'
+          : (text ? text.slice(0, 240) : 'Jawaban bukan JSON')
+      );
+    }
+    if (!res.ok) throw new Error(data.error || 'Proxy HTTP ' + res.status);
+    return data;
+  }
 
   if (isPost) {
     const res = await fetch(url, {
