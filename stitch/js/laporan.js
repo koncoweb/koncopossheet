@@ -28,6 +28,36 @@ function fmtTglWaktu(tglStr) {
   return new Date(tglStr).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+/** Harga beli / unit untuk hitung modal (dari baris transaksi lalu master produk). */
+function resolveItemHargaBeliForLaporan(item) {
+  const fromItem = Number(item && item.hargaBeli);
+  if (Number.isFinite(fromItem) && fromItem > 0) return fromItem;
+  const produkList = DB.get('produk') || [];
+  const pid = item && (item.productId || item.produkId);
+  if (pid) {
+    const p = produkList.find(x => x.id === pid);
+    if (p != null) return Math.max(0, Number(p.hargaBeli) || 0);
+  }
+  const nama = String(item && item.nama || '').trim().toLowerCase();
+  if (nama) {
+    const p = produkList.find(x => String(x.nama || '').trim().toLowerCase() === nama);
+    if (p != null) return Math.max(0, Number(p.hargaBeli) || 0);
+  }
+  return 0;
+}
+
+function lineOmsetProdukTerjual(item) {
+  if (item.subtotal != null && Number(item.subtotal) >= 0) return Math.round(Number(item.subtotal) || 0);
+  const qty = Number(item.qty) || 0;
+  const h = Number(item.harga) || 0;
+  return Math.round(qty * h);
+}
+
+function lineModalProdukTerjual(item) {
+  const qty = Number(item.qty) || 0;
+  return Math.round(qty * resolveItemHargaBeliForLaporan(item));
+}
+
 // ===== KARTU RINGKASAN =====
 function summaryCard(items) {
   return `<div class="laporan-summary-grid">${items.map(i => `
@@ -38,14 +68,14 @@ function summaryCard(items) {
 }
 
 // ===== TABEL LAPORAN =====
-function laporanTable(headers, rows, emptyMsg = 'Tidak ada data') {
+function laporanTable(headers, rows, emptyMsg = 'Tidak ada data', wrapClass = '') {
   if (rows.length === 0) {
     return `<div class="pos-empty-state" style="padding:40px 20px;">
       <i class="fa-solid fa-inbox" style="font-size:40px;color:#ddd;margin-bottom:8px;"></i>
       <p class="pos-empty-title">${emptyMsg}</p>
     </div>`;
   }
-  return `<div class="laporan-table-wrap">
+  return `<div class="laporan-table-wrap${wrapClass ? ' ' + wrapClass : ''}">
     <table class="laporan-table">
       <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
       <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
@@ -207,35 +237,47 @@ function renderLaporanProdukTerjual() {
   if (dari) trxList = trxList.filter(t => t.tanggal >= dari);
   if (sampai) trxList = trxList.filter(t => t.tanggal <= sampai + 'T23:59:59');
 
-  // Aggregate per produk
+  // Aggregate per nama produk (omset = subtotal baris, modal = qty × harga beli)
   const produkMap = {};
   trxList.forEach(t => {
-    t.items.forEach(item => {
-      if (!produkMap[item.nama]) produkMap[item.nama] = { qty: 0, total: 0 };
-      produkMap[item.nama].qty += item.qty;
-      produkMap[item.nama].total += item.qty * item.harga;
+    (t.items || []).forEach(item => {
+      const nama = item.nama || '—';
+      if (!produkMap[nama]) produkMap[nama] = { qty: 0, total: 0, modal: 0 };
+      produkMap[nama].qty += Number(item.qty) || 0;
+      produkMap[nama].total += lineOmsetProdukTerjual(item);
+      produkMap[nama].modal += lineModalProdukTerjual(item);
     });
   });
 
   const sorted = Object.entries(produkMap).sort((a, b) => b[1].qty - a[1].qty);
   const totalQty = sorted.reduce((s, [, v]) => s + v.qty, 0);
   const totalNominal = sorted.reduce((s, [, v]) => s + v.total, 0);
+  const totalModal = sorted.reduce((s, [, v]) => s + v.modal, 0);
+  const totalLaba = totalNominal - totalModal;
 
-  const rows = sorted.map(([nama, v]) => [
-    nama,
-    v.qty,
-    fmt(v.total),
-    `<span style="font-size:11px;color:var(--text-light);">${totalNominal > 0 ? ((v.total / totalNominal) * 100).toFixed(1) + '%' : '0%'}</span>`
-  ]);
+  const rows = sorted.map(([nama, v]) => {
+    const laba = v.total - v.modal;
+    const labaStyle = laba > 0 ? 'color:#2ecc71;font-weight:600;' : 'color:var(--danger);font-weight:600;';
+    return [
+      nama,
+      v.qty,
+      fmt(v.total),
+      fmt(v.modal),
+      `<span style="font-size:12px;${labaStyle}">${fmt(laba)}</span>`,
+      `<span style="font-size:11px;color:var(--text-light);">${totalNominal > 0 ? ((v.total / totalNominal) * 100).toFixed(1) + '%' : '0%'}</span>`,
+    ];
+  });
 
   body.innerHTML = summaryCard([
     { label: 'Jenis Produk', value: sorted.length },
     { label: 'Total Qty Terjual', value: totalQty },
-    { label: 'Total Nominal', value: fmt(totalNominal), color: '#2ecc71' },
+    { label: 'Total Harga', value: fmt(totalNominal), color: '#2ecc71' },
+    { label: 'Total Laba', value: fmt(totalLaba), color: totalLaba > 0 ? '#2ecc71' : 'var(--danger)' },
   ]) + laporanTable(
-    ['Produk', 'Qty', 'Nominal', 'Porsi'],
+    ['Produk', 'Qty', 'Harga', 'Modal', 'Laba', 'Porsi'],
     rows,
-    'Belum ada produk terjual'
+    'Belum ada produk terjual',
+    'laporan-table-wrap--wide'
   );
 }
 
@@ -254,15 +296,22 @@ function exportProdukTerjualExcel() {
 
   const produkMap = {};
   trxList.forEach(t => {
-    t.items.forEach(item => {
-      if (!produkMap[item.nama]) produkMap[item.nama] = { qty: 0, total: 0 };
-      produkMap[item.nama].qty += item.qty;
-      produkMap[item.nama].total += item.qty * item.harga;
+    (t.items || []).forEach(item => {
+      const nama = item.nama || '—';
+      if (!produkMap[nama]) produkMap[nama] = { qty: 0, total: 0, modal: 0 };
+      produkMap[nama].qty += Number(item.qty) || 0;
+      produkMap[nama].total += lineOmsetProdukTerjual(item);
+      produkMap[nama].modal += lineModalProdukTerjual(item);
     });
   });
 
   const data = Object.entries(produkMap).sort((a, b) => b[1].qty - a[1].qty);
-  const csv = 'Produk,Qty,Nominal\n' + data.map(([nama, v]) => `${nama},${v.qty},${v.total}`).join('\n');
+  const csv =
+    'Produk,Qty,Harga,Modal,Laba\n' +
+    data.map(([nama, v]) => {
+      const laba = v.total - v.modal;
+      return `${nama},${v.qty},${v.total},${v.modal},${laba}`;
+    }).join('\n');
   downloadCSV(csv, 'laporan-produk-terjual.csv');
 }
 

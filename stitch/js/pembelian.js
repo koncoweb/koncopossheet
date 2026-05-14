@@ -8,7 +8,7 @@ function renderPembelianList() {
   const area = document.getElementById('pembelian-list-area');
   if (!area) return;
   if (list.length === 0) {
-    area.innerHTML = emptyState('fa-cart-arrow-down', 'Belum ada pembelian', 'Tap + untuk tambah pembelian');
+    area.innerHTML = emptyState('fa-cart-arrow-down', 'Belum ada pembelian', 'Satu item: + · Banyak item: ikon daftar');
     return;
   }
   area.innerHTML = list.map(b => `
@@ -64,6 +64,248 @@ function toggleJatuhTempoBeli() {
   const status = document.getElementById('beli-status')?.value;
   const group = document.getElementById('beli-jth-tempo-group');
   if (group) group.style.display = status === 'hutang' ? '' : 'none';
+}
+
+function toggleJatuhTempoBeliMassal() {
+  const status = document.getElementById('beli-m-status')?.value;
+  const group = document.getElementById('beli-m-jth-tempo-group');
+  if (group) group.style.display = status === 'hutang' ? '' : 'none';
+}
+
+function _beliMassalEsc(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/"/g, '&quot;');
+}
+
+function beliMassalBuildProdukOptions() {
+  const products = getProducts();
+  return (
+    '<option value="">Pilih Produk</option>' +
+    products
+      .map(
+        p =>
+          `<option value="${_beliMassalEsc(p.id)}" data-unit="${_beliMassalEsc(p.unit || 'Pcs')}" data-harga="${Number(p.hargaBeli) || 0}">${_beliMassalEsc(p.nama)}</option>`
+      )
+      .join('')
+  );
+}
+
+function beliMassalRowHtml() {
+  return `
+    <div class="beli-massal-row">
+      <button type="button" class="beli-massal-row-del" onclick="beliMassalHapusBaris(this)" aria-label="Hapus baris">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+      <div class="tp-field-group" style="margin-bottom:10px;">
+        <label class="tp-label">Produk</label>
+        <div class="tp-select-wrap tp-select-full">
+          <select class="tp-select beli-m-produk" onchange="beliMassalProdukChange(this)">${beliMassalBuildProdukOptions()}</select>
+          <i class="fa-solid fa-chevron-down tp-select-arrow"></i>
+        </div>
+      </div>
+      <div class="tp-two-col">
+        <div class="tp-field-group">
+          <label class="tp-label">Jumlah</label>
+          <input type="number" class="tp-input beli-m-qty" value="1" min="1" step="any" oninput="beliMassalRefreshRangkuman()" />
+        </div>
+        <div class="tp-field-group">
+          <label class="tp-label">Harga / unit</label>
+          <input type="number" class="tp-input beli-m-harga" value="0" min="0" step="any" oninput="beliMassalRefreshRangkuman()" />
+        </div>
+      </div>
+    </div>`;
+}
+
+function beliMassalTambahBaris() {
+  const wrap = document.getElementById('beli-massal-lines');
+  if (!wrap) return;
+  wrap.insertAdjacentHTML('beforeend', beliMassalRowHtml());
+  beliMassalRefreshRangkuman();
+}
+
+function beliMassalHapusBaris(btn) {
+  const wrap = document.getElementById('beli-massal-lines');
+  if (!wrap) return;
+  const rows = wrap.querySelectorAll('.beli-massal-row');
+  if (rows.length <= 1) {
+    showToast('Minimal satu baris.');
+    return;
+  }
+  const row = btn.closest('.beli-massal-row');
+  if (row) row.remove();
+  beliMassalRefreshRangkuman();
+}
+
+function beliMassalProdukChange(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const row = sel.closest('.beli-massal-row');
+  if (!row) return;
+  const hIn = row.querySelector('.beli-m-harga');
+  if (hIn && opt) hIn.value = opt.dataset.harga || 0;
+  beliMassalRefreshRangkuman();
+}
+
+function beliMassalRefreshRangkuman() {
+  const el = document.getElementById('beli-massal-grand-val');
+  if (!el) return;
+  let sum = 0;
+  document.querySelectorAll('#beli-massal-lines .beli-massal-row').forEach(row => {
+    const sel = row.querySelector('.beli-m-produk');
+    const pid = sel && sel.value;
+    if (!pid) return;
+    const qty = parseFloat(row.querySelector('.beli-m-qty')?.value) || 0;
+    const harga = parseFloat(row.querySelector('.beli-m-harga')?.value) || 0;
+    sum += qty * harga;
+  });
+  el.textContent = typeof fmt === 'function' ? fmt(sum) : String(sum);
+}
+
+function collectBeliMassalLinesParsed() {
+  const lines = [];
+  const rows = document.querySelectorAll('#beli-massal-lines .beli-massal-row');
+  for (let idx = 0; idx < rows.length; idx++) {
+    const row = rows[idx];
+    const sel = row.querySelector('.beli-m-produk');
+    const produkId = sel && sel.value;
+    const qty = parseFloat(row.querySelector('.beli-m-qty')?.value) || 0;
+    const harga = parseFloat(row.querySelector('.beli-m-harga')?.value) || 0;
+    if (!produkId && qty <= 0 && harga <= 0) continue;
+    if (!produkId) return { error: 'Baris ' + (idx + 1) + ': pilih produk.', lines: null };
+    if (qty <= 0) return { error: 'Baris ' + (idx + 1) + ': jumlah harus lebih dari 0.', lines: null };
+    if (harga < 0) return { error: 'Baris ' + (idx + 1) + ': harga tidak valid.', lines: null };
+    const opt = sel.options[sel.selectedIndex];
+    lines.push({
+      produkId,
+      produkNama: (opt && opt.text) ? opt.text.trim() : '',
+      unit: (opt && opt.dataset && opt.dataset.unit) || 'Pcs',
+      jumlah: qty,
+      harga,
+    });
+  }
+  return { error: null, lines };
+}
+
+function applyPembelianBulkLines(lines, header) {
+  const products = getProducts();
+  const pembelianList = DB.get('pembelian');
+  const base = Date.now();
+  const stokDelta = {};
+  const newBeli = [];
+
+  lines.forEach((line, i) => {
+    const id = 'beli_' + base + '_' + i;
+    const beli = {
+      id,
+      tanggal: header.tanggal,
+      supplierId: header.supplierId,
+      supplierNama: header.supplierNama,
+      produkId: line.produkId,
+      produkNama: line.produkNama,
+      unit: line.unit || 'Pcs',
+      jumlah: line.jumlah,
+      harga: line.harga,
+      total: line.jumlah * line.harga,
+      status: header.status,
+      tglJthTempo: header.tglJthTempo,
+      keterangan: header.keterangan,
+      createdAt: base + i,
+    };
+    newBeli.push(beli);
+    pembelianList.push(beli);
+    stokDelta[line.produkId] = (stokDelta[line.produkId] || 0) + line.jumlah;
+  });
+
+  Object.keys(stokDelta).forEach(function (pid) {
+    const p = products.find(x => x.id === pid);
+    if (p) p.stok = (p.stok ?? p.stokAwal ?? 0) + stokDelta[pid];
+  });
+
+  DB.set('pembelian', pembelianList);
+  saveProducts(products);
+
+  newBeli.forEach(function (b) {
+    autoSync('pembelian', 'create', b);
+  });
+  Object.keys(stokDelta).forEach(function (pid) {
+    const p = products.find(x => x.id === pid);
+    if (p) autoSync('produk', 'update', p, pid);
+  });
+}
+
+function initTambahPembelianMassal() {
+  const today = new Date().toISOString().split('T')[0];
+  setVal('beli-m-tanggal', today);
+  setVal('beli-m-keterangan', '');
+  setVal('beli-m-jth-tempo', '');
+  const st = document.getElementById('beli-m-status');
+  if (st) st.value = 'lunas';
+  toggleJatuhTempoBeliMassal();
+  const supSel = document.getElementById('beli-m-supplier');
+  if (supSel) {
+    supSel.innerHTML =
+      '<option value="">Pilih Supplier</option>' +
+      DB.get('supplier')
+        .map(s => `<option value="${_beliMassalEsc(s.id)}">${_beliMassalEsc(s.nama)}</option>`)
+        .join('');
+  }
+  const wrap = document.getElementById('beli-massal-lines');
+  if (wrap) {
+    wrap.innerHTML = '';
+    beliMassalTambahBaris();
+    beliMassalTambahBaris();
+  }
+  beliMassalRefreshRangkuman();
+}
+
+function simpanPembelianMassal() {
+  const { error, lines } = collectBeliMassalLinesParsed();
+  if (error) {
+    showToast(error);
+    return;
+  }
+  if (!lines || lines.length === 0) {
+    showToast('Tambah minimal satu baris dengan produk dan jumlah.');
+    return;
+  }
+  if (lines.length > 200) {
+    showToast('Maksimal 200 baris per penyimpanan. Bagi menjadi beberapa simpanan.');
+    return;
+  }
+
+  const tanggal = document.getElementById('beli-m-tanggal')?.value || new Date().toISOString().split('T')[0];
+  const supplierSel = document.getElementById('beli-m-supplier');
+  const supplierId = supplierSel?.value || '';
+  const supplierNama = supplierId ? supplierSel.options[supplierSel.selectedIndex]?.text?.trim() || '' : '';
+  const status = document.getElementById('beli-m-status')?.value || 'lunas';
+  const tglJthTempo = document.getElementById('beli-m-jth-tempo')?.value || '';
+  let keterangan = document.getElementById('beli-m-keterangan')?.value.trim() || '';
+  if (lines.length > 1 && keterangan && !keterangan.includes('massal')) {
+    keterangan += ' (massal ' + lines.length + ' item)';
+  } else if (lines.length > 1 && !keterangan) {
+    keterangan = 'Pembelian massal ' + lines.length + ' item';
+  }
+
+  const header = {
+    tanggal,
+    supplierId,
+    supplierNama,
+    status,
+    tglJthTempo,
+    keterangan,
+  };
+
+  try {
+    applyPembelianBulkLines(lines, header);
+  } catch (e) {
+    console.error(e);
+    showToast('Gagal menyimpan: ' + (e.message || 'error'));
+    return;
+  }
+
+  showToast(lines.length + ' pembelian disimpan.');
+  switchScreen('pembelian');
 }
 
 function updateHargaBeli() {
@@ -379,6 +621,7 @@ document.addEventListener('screenInit', (e) => {
   const { name, params } = e.detail;
   if (name === 'pembelian') renderPembelianList();
   if (name === 'tambah-pembelian') initTambahPembelian();
+  if (name === 'tambah-pembelian-massal') initTambahPembelianMassal();
   if (name === 'mutasi-stok') renderMutasiList();
   if (name === 'tambah-mutasi') initTambahMutasi();
   if (name === 'bayar-supplier') renderBayarSupplier();

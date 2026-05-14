@@ -29,7 +29,7 @@ const NAV_PARENT = {
   'sync-settings': 'pengaturan',
   'biaya': 'biaya', 'tambah-biaya': 'biaya',
   'beranda': 'beranda',
-  'pembelian': 'beranda', 'tambah-pembelian': 'beranda',
+  'pembelian': 'beranda', 'tambah-pembelian': 'beranda', 'tambah-pembelian-massal': 'beranda',
   'mutasi-stok': 'beranda', 'tambah-mutasi': 'beranda',
   'bayar-supplier': 'beranda', 'pelanggan-bayar': 'beranda',
   'rekapan': 'beranda',

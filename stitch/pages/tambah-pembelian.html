@@ -58,6 +58,9 @@
   </div>
   <div style="height:16px;"></div>
 </div>
-<div class="tp-footer">
-  <button class="btn-simpan" onclick="simpanPembelian()">Simpan</button>
+<div class="tp-footer" style="flex-direction:column;gap:8px;">
+  <button type="button" class="btn-simpan" onclick="simpanPembelian()">Simpan</button>
+  <button type="button" class="tp-outline-btn" style="width:100%;margin:0;" onclick="switchScreen('tambah-pembelian-massal')">
+    <i class="fa-solid fa-list-check"></i> Pembelian massal (banyak item)
+  </button>
 </div>

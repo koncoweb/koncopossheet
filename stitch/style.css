@@ -2597,6 +2597,10 @@ body {
   overflow-x: auto;
 }
 
+.laporan-table-wrap.laporan-table-wrap--wide .laporan-table {
+  min-width: 560px;
+}
+
 .laporan-table {
   width: 100%;
   border-collapse: collapse;
@@ -4676,4 +4680,56 @@ body {
   .cart-edit-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Pembelian massal */
+.beli-massal-rows-wrap {
+  margin-top: 4px;
+}
+
+.beli-massal-row {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 12px 40px 12px 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.beli-massal-row-del {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--danger);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.beli-massal-row-del:active {
+  opacity: 0.85;
+}
+
+.beli-massal-grand {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--text-mid);
+}
+
+.beli-massal-grand strong {
+  font-size: 15px;
+  color: var(--text-dark);
 }

@@ -1,12 +1,15 @@
 <div class="topbar">
   <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('beranda')" style="font-size:18px;"></i>
   <span class="topbar-title" style="flex:1;text-align:center;">Pembelian</span>
-  <i class="fa-solid fa-plus topbar-icon" onclick="switchScreen('tambah-pembelian')"></i>
+  <span style="display:flex;align-items:center;gap:4px;">
+    <i class="fa-solid fa-list-check topbar-icon" onclick="switchScreen('tambah-pembelian-massal')" title="Pembelian massal"></i>
+    <i class="fa-solid fa-plus topbar-icon" onclick="switchScreen('tambah-pembelian')" title="Tambah satu item"></i>
+  </span>
 </div>
 <div class="screen-content" id="pembelian-list-area">
   <div class="pos-empty-state">
     <i class="fa-solid fa-cart-arrow-down" style="font-size:48px;color:#ddd;margin-bottom:8px;"></i>
     <p class="pos-empty-title">Belum ada pembelian</p>
-    <p class="pos-empty-sub">Tap + untuk tambah pembelian</p>
+    <p class="pos-empty-sub">Satu item: + · Banyak item: ikon daftar</p>
   </div>
 </div>

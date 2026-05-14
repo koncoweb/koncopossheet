@@ -1,0 +1,59 @@
+<div class="topbar">
+  <i class="fa-solid fa-arrow-left topbar-icon" onclick="switchScreen('pembelian')" style="font-size:18px;"></i>
+  <span class="topbar-title" style="flex:1;text-align:center;">Pembelian Massal</span>
+  <span style="width:24px;"></span>
+</div>
+<div class="screen-content" style="padding-bottom:calc(var(--nav-height) + 120px);">
+  <p style="font-size:12px;color:var(--text-light);margin:0 0 14px;line-height:1.45;">
+    Satu tanggal &amp; supplier untuk banyak produk. Setiap baris disimpan sebagai pembelian terpisah (sama seperti input satu per satu), stok diperbarui aman per produk.
+  </p>
+
+  <div class="tp-form">
+    <div class="tp-field-group">
+      <label class="tp-label">Tanggal</label>
+      <input type="date" id="beli-m-tanggal" class="tp-input" />
+    </div>
+    <div class="tp-field-group">
+      <label class="tp-label">Supplier</label>
+      <div class="tp-select-wrap tp-select-full">
+        <select id="beli-m-supplier" class="tp-select"><option value="">Pilih Supplier</option></select>
+        <i class="fa-solid fa-chevron-down tp-select-arrow"></i>
+      </div>
+    </div>
+    <div class="tp-field-group">
+      <label class="tp-label">Status Bayar (semua baris)</label>
+      <div class="tp-select-wrap tp-select-full">
+        <select id="beli-m-status" class="tp-select" onchange="toggleJatuhTempoBeliMassal()">
+          <option value="lunas">Lunas</option>
+          <option value="hutang">Hutang / Belum Lunas</option>
+        </select>
+        <i class="fa-solid fa-chevron-down tp-select-arrow"></i>
+      </div>
+    </div>
+    <div class="tp-field-group" id="beli-m-jth-tempo-group" style="display:none;">
+      <label class="tp-label">Tanggal Jatuh Tempo</label>
+      <input type="date" id="beli-m-jth-tempo" class="tp-input" />
+    </div>
+    <div class="tp-field-group">
+      <label class="tp-label">Keterangan (opsional, semua baris)</label>
+      <textarea id="beli-m-keterangan" class="tp-textarea" rows="2" placeholder="No. PO, pengiriman, dll."></textarea>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px;">
+    <span style="font-size:13px;font-weight:700;color:var(--text-dark);">Daftar barang</span>
+    <button type="button" class="tp-outline-btn" style="margin:0;padding:8px 12px;font-size:12px;" onclick="beliMassalTambahBaris()">
+      <i class="fa-solid fa-plus"></i> Tambah baris
+    </button>
+  </div>
+  <div id="beli-massal-lines" class="beli-massal-rows-wrap"></div>
+
+  <div class="beli-massal-grand" id="beli-massal-grand">
+    <span>Total estimasi</span>
+    <strong id="beli-massal-grand-val">Rp0</strong>
+  </div>
+</div>
+<div class="tp-footer" style="flex-direction:column;gap:8px;">
+  <button type="button" class="btn-simpan" onclick="simpanPembelianMassal()">Simpan semua</button>
+  <button type="button" class="tp-outline-btn" style="width:100%;margin:0;" onclick="switchScreen('tambah-pembelian')">Input satu produk saja</button>
+</div>

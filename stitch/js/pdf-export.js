@@ -404,35 +404,32 @@ function exportProdukTerjualPDF() {
   
   const produkMap = {};
   trxList.forEach(t => {
-    t.items.forEach(item => {
-      if (!produkMap[item.id]) {
-        produkMap[item.id] = { nama: item.nama, qty: 0, total: 0, laba: 0 };
-      }
-      produkMap[item.id].qty += item.qty;
-      produkMap[item.id].total += item.qty * item.harga;
-      produkMap[item.id].laba += (item.harga - (item.hargaBeli || 0)) * item.qty;
+    (t.items || []).forEach(item => {
+      const nama = item.nama || '—';
+      if (!produkMap[nama]) produkMap[nama] = { nama, qty: 0, total: 0, modal: 0 };
+      produkMap[nama].qty += Number(item.qty) || 0;
+      produkMap[nama].total += lineOmsetProdukTerjual(item);
+      produkMap[nama].modal += lineModalProdukTerjual(item);
     });
   });
-  
+
   const data = Object.values(produkMap).sort((a, b) => b.qty - a.qty);
-  
-  const tableData = data.map((p, i) => [
-    i + 1,
-    p.nama,
-    p.qty,
-    pdfFmt(p.total),
-    pdfFmt(p.laba)
-  ]);
-  
+
+  const tableData = data.map((p, i) => {
+    const laba = p.total - p.modal;
+    return [i + 1, p.nama, p.qty, pdfFmt(p.total), pdfFmt(p.modal), pdfFmt(laba)];
+  });
+
   const totalQty = data.reduce((s, p) => s + p.qty, 0);
   const totalOmset = data.reduce((s, p) => s + p.total, 0);
-  const totalLaba = data.reduce((s, p) => s + p.laba, 0);
-  
+  const totalModal = data.reduce((s, p) => s + p.modal, 0);
+  const totalLaba = totalOmset - totalModal;
+
   doc.autoTable({
     startY: yPos,
-    head: [['No', 'Produk', 'Qty Terjual', 'Total Omset', 'Total Laba']],
+    head: [['No', 'Produk', 'Qty', 'Harga', 'Modal', 'Laba']],
     body: tableData,
-    foot: [['', 'TOTAL', totalQty, pdfFmt(totalOmset), pdfFmt(totalLaba)]],
+    foot: [['', 'TOTAL', totalQty, pdfFmt(totalOmset), pdfFmt(totalModal), pdfFmt(totalLaba)]],
     theme: 'grid',
     headStyles: { fillColor: [232, 99, 122], fontSize: 9 },
     footStyles: { fillColor: [240, 240, 240], fontStyle: 'bold', fontSize: 9 },
@@ -441,8 +438,9 @@ function exportProdukTerjualPDF() {
       0: { cellWidth: 10, halign: 'center' },
       2: { halign: 'center' },
       3: { halign: 'right' },
-      4: { halign: 'right' }
-    }
+      4: { halign: 'right' },
+      5: { halign: 'right' },
+    },
   });
   
   addPDFFooter(doc);
